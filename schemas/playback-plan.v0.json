@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://soundef.io/schemas/playback-plan.v0.json",
+  "title": "Soundef PlaybackPlan v0",
+  "description": "Resolved playback plan — deterministic output of Soundef Core (definition + seed → plan). Keys match schemas/soundef.v0.json (gain/pitch/offset bare). Units fixed: gain dB, pitch st, offset ms.",
+  "type": "object",
+  "required": [
+    "name",
+    "seed",
+    "layers"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Event name, mirrors SoundefDefinition.name (e.g. sword_hit)."
+    },
+    "seed": {
+      "description": "Seed used for this resolve. Preserves original type string|number.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "layers": {
+      "type": "array",
+      "description": "Resolved layers in declaration order. Skipped layers are kept with skipped:true for ghost timeline.",
+      "items": {
+        "$ref": "#/definitions/resolvedLayer"
+      }
+    },
+    "effects": {
+      "type": "object",
+      "description": "Resolved post-layer FX. Only present when definition declares effects.",
+      "additionalProperties": false,
+      "properties": {
+        "reverbAmount": {
+          "type": "number",
+          "description": "Reverb send 0..1, lerped from range via isolated seed#reverb stream."
+        },
+        "reverbDecay": {
+          "type": "number",
+          "description": "Reverb tail seconds 0.1..10, via seed#reverb."
+        },
+        "reverbDamping": {
+          "type": "number",
+          "description": "Reverb damping 0..1, via seed#reverb."
+        },
+        "delayTime": {
+          "type": "number",
+          "description": "Delay time ms, via seed#delay."
+        },
+        "delayFeedback": {
+          "type": "number",
+          "description": "Delay feedback 0..1, via seed#delay."
+        },
+        "delayMix": {
+          "type": "number",
+          "description": "Delay mix 0..1, via seed#delay."
+        },
+        "limiterThreshold": {
+          "type": "number",
+          "description": "Limiter threshold dB, via seed#limiter."
+        },
+        "limiterCeiling": {
+          "type": "number",
+          "description": "Limiter ceiling dB, via seed#limiter."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "resolvedLayer": {
+      "type": "object",
+      "required": [
+        "name",
+        "source",
+        "offset",
+        "gain",
+        "pitch"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Layer name (e.g. body, metal)."
+        },
+        "source": {
+          "type": "string",
+          "description": "Resolved source file after glob expansion (e.g. swords/body_01.wav)."
+        },
+        "offset": {
+          "type": "number",
+          "description": "Delay from trigger in milliseconds. Parsed from ms string or randomRange ms. 0 if omitted."
+        },
+        "gain": {
+          "type": "number",
+          "description": "Gain in decibels (dB). Parsed from dB string or randomRange dB."
+        },
+        "pitch": {
+          "type": "number",
+          "description": "Pitch shift in semitones (st). Parsed from st string or randomRange st."
+        },
+        "probabilityRoll": {
+          "type": "number",
+          "description": "RNG roll [0,1) used for probability check, if layer had probability."
+        },
+        "skipped": {
+          "type": "boolean",
+          "description": "True when probability roll failed — playback and bake ignore it, timeline shows ghost."
+        }
+      }
+    },
+    "unitValue": {
+      "type": "object",
+      "description": "Reserved wrapper for future typed gain/pitch/offset if runtime demands type-safe units. Not used in v0 bare plan — kept to avoid re-introducing gainDb drift.",
+      "required": [
+        "value",
+        "unit",
+        "raw"
+      ],
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "dB",
+            "ms",
+            "st"
+          ]
+        },
+        "raw": {
+          "type": "string",
+          "description": "Original raw string, e.g. \"-2dB\" / \"17ms\"."
+        }
+      }
+    }
+  }
+}

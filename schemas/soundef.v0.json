@@ -1,0 +1,369 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://soundef.io/schemas/soundef.v0.json",
+  "title": "Soundef v0",
+  "description": "Canonical Soundef v0 — YAML 1.2 Core Schema (JSON valid). Full validation via JSON Schema, pattern tight + x-soundef-sameUnit.",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "layers"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "enum": [
+        0
+      ],
+      "description": "Must be 0"
+    },
+    "layers": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "sources"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(sounds/)?[A-Za-z0-9_\\-./*?]+\\.[A-Za-z0-9]+$",
+              "description": "Hard sounds/-only bare — e.g. swords/body_01.wav or sounds/swords/body_01.wav alias; basename glob * only; no absolute or ../"
+            }
+          },
+          "selection": {
+            "type": "object",
+            "required": [
+              "mode"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "random",
+                  "sequence"
+                ]
+              },
+              "avoidRepeat": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "probability": {
+            "description": "scalar 0..1 or randomRange unitless",
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "$ref": "#/definitions/randomRangeUnitless"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\s*-?\\d+(\\.\\d+)?\\s*$"
+              }
+            ]
+          },
+          "offset": {
+            "$ref": "#/definitions/scalarOrRandomRangeMs"
+          },
+          "gain": {
+            "$ref": "#/definitions/scalarOrRandomRangeDb"
+          },
+          "pitch": {
+            "$ref": "#/definitions/scalarOrRandomRangeSt"
+          }
+        }
+      }
+    },
+    "effects": {
+      "description": "Forge-only — optional, ignorable live. Baked render includes it. Users may implement it. Entire block optional.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "reverb": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "description": "scalar 0..1 or randomRange unitless",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "$ref": "#/definitions/randomRangeUnitless"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\s*-?\\d+(\\.\\d+)?\\s*$"
+                }
+              ]
+            },
+            "decay": {
+              "description": "reverb tail in seconds, e.g. \"1.5s\"",
+              "$ref": "#/definitions/scalarOrRandomRangeS"
+            },
+            "damping": {
+              "description": "high-freq damping 0..1 (0 bright, 1 dark)",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "$ref": "#/definitions/randomRangeUnitless"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\s*-?\\d+(\\.\\d+)?\\s*$"
+                }
+              ]
+            }
+          }
+        },
+        "delay": {
+          "description": "simple mono delay",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "time": {
+              "description": "delay time in ms, e.g. \"250ms\"",
+              "$ref": "#/definitions/scalarOrRandomRangeMs"
+            },
+            "feedback": {
+              "description": "feedback 0..1",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "$ref": "#/definitions/randomRangeUnitless"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\s*-?\\d+(\\.\\d+)?\\s*$"
+                }
+              ]
+            },
+            "mix": {
+              "description": "wet mix 0..1",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "$ref": "#/definitions/randomRangeUnitless"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\s*-?\\d+(\\.\\d+)?\\s*$"
+                }
+              ]
+            }
+          }
+        },
+        "limiter": {
+          "description": "bus limiter (simplest: threshold + ceiling in dB)",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "threshold": {
+              "description": "threshold in dB, e.g. \"-6dB\"",
+              "$ref": "#/definitions/scalarOrRandomRangeDb"
+            },
+            "ceiling": {
+              "description": "ceiling in dB, e.g. \"-0.1dB\"",
+              "$ref": "#/definitions/scalarOrRandomRangeDb"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "scalarStringDb": {
+      "type": "string",
+      "pattern": "^\\s*-?\\d+(\\.\\d+)?[dD][bB]\\s*$"
+    },
+    "scalarStringMs": {
+      "type": "string",
+      "pattern": "^\\s*-?\\d+(\\.\\d+)?[mM][sS]\\s*$"
+    },
+    "scalarStringSt": {
+      "type": "string",
+      "pattern": "^\\s*-?\\d+(\\.\\d+)?[sS][tT]\\s*$"
+    },
+    "scalarStringS": {
+      "type": "string",
+      "pattern": "^\\s*-?\\d+(\\.\\d+)?[sS]\\s*$"
+    },
+    "randomRangeDb": {
+      "type": "object",
+      "required": [
+        "randomRange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "randomRange": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\s*-?\\d+(\\.\\d+)?[dD][bB]\\s*$"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "x-soundef-sameUnit": true
+        }
+      }
+    },
+    "randomRangeMs": {
+      "type": "object",
+      "required": [
+        "randomRange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "randomRange": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\s*-?\\d+(\\.\\d+)?[mM][sS]\\s*$"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "x-soundef-sameUnit": true
+        }
+      }
+    },
+    "randomRangeSt": {
+      "type": "object",
+      "required": [
+        "randomRange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "randomRange": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\s*-?\\d+(\\.\\d+)?[sS][tT]\\s*$"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "x-soundef-sameUnit": true
+        }
+      }
+    },
+    "randomRangeS": {
+      "type": "object",
+      "required": [
+        "randomRange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "randomRange": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\s*-?\\d+(\\.\\d+)?[sS]\\s*$"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "x-soundef-sameUnit": true
+        }
+      }
+    },
+    "randomRangeUnitless": {
+      "type": "object",
+      "required": [
+        "randomRange"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "randomRange": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "scalarOrRandomRangeDb": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/scalarStringDb"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/randomRangeDb"
+        }
+      ]
+    },
+    "scalarOrRandomRangeMs": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/scalarStringMs"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/randomRangeMs"
+        }
+      ]
+    },
+    "scalarOrRandomRangeSt": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/scalarStringSt"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/randomRangeSt"
+        }
+      ]
+    },
+    "scalarOrRandomRangeS": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/scalarStringS"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/randomRangeS"
+        }
+      ]
+    }
+  }
+}
